@@ -7,8 +7,8 @@ export class AppController {
     return { status: 'ok' };
   }
 
-  @Get()
-  Employees() {
-    return { message: 'Welcome to the WFH Attendance Backend API' };
-  }
+  // @Get()
+  // Employees() {
+  //   return { message: 'Welcome to the WFH Attendance Backend API' };
+  // }
 }

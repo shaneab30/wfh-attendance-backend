@@ -6,8 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { Attendance } from 'src/attendance/attendance.entity';
-
+import { Attendance } from '../attendance/attendance.entity';
 export enum EmployeeRole {
   EMPLOYEE = 'EMPLOYEE',
   HRD = 'HRD',

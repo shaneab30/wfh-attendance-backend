@@ -23,7 +23,7 @@ export class Attendance {
   employee_id: number;
 
   @Column({ type: 'date' })
-  attendance_date: string;
+  attendance_date: Date;
 
   @Column({ type: 'time', nullable: true })
   check_in_time: string;
