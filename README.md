@@ -96,3 +96,15 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## .env Example
+
+```bash
+DB_HOST= your db host
+DB_PORT= your db port
+DB_USERNAME= your db username
+DB_PASSWORD= your db password
+DB_NAME= your db name
+JWT_SECRET= your secret key
+PORT= your port
+```
