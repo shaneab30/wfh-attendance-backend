@@ -14,6 +14,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Employee, EmployeeRole } from './employees.entity';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UpdateEmployeeDto } from './dto/update-employee.dto';
 
 @Controller('employees')
 @UseGuards(JwtAuthGuard)
@@ -43,7 +44,7 @@ export class EmployeesController {
   @UseGuards(RolesGuard)
   @Roles(EmployeeRole.ADMIN)
   @Roles(EmployeeRole.HRD)
-  update(@Param('id') id: number, @Body() dto: CreateEmployeeDto) {
+  update(@Param('id') id: number, @Body() dto: UpdateEmployeeDto) {
     return this.employeesService.update(+id, dto);
   }
 

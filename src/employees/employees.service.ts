@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { Employee, EmployeeRole } from './employees.entity';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { NotFoundException, ConflictException } from '@nestjs/common';
+import { UpdateEmployeeDto } from './dto/update-employee.dto';
 
 @Injectable()
 export class EmployeesService {
@@ -73,28 +74,27 @@ export class EmployeesService {
 
     return employee;
   }
-  async update(id: number, dto: Partial<CreateEmployeeDto>) {
+  async update(id: number, dto: UpdateEmployeeDto) {
     const employee = await this.employeeRepo.findOne({ where: { id } });
+
     if (!employee) {
       throw new NotFoundException('Employee not found');
     }
 
     if (dto.email || dto.employee_code) {
-      const whereConditions: any[] = [];
+      const whereConditions = [
+        dto.email ? { email: dto.email, id: Not(id) } : undefined,
+        dto.employee_code
+          ? { employee_code: dto.employee_code, id: Not(id) }
+          : undefined,
+      ].filter(Boolean) as Array<any>;
 
-      if (dto.email) {
-        whereConditions.push({ email: dto.email, id: Not(id) });
-      }
-      if (dto.employee_code) {
-        whereConditions.push({ employee_code: dto.employee_code, id: Not(id) });
-      }
-
-      const conflicts = await this.employeeRepo.findOne({
+      const conflict = await this.employeeRepo.findOne({
         where: whereConditions,
       });
 
-      if (conflicts) {
-        if (conflicts.email === dto.email) {
+      if (conflict) {
+        if (conflict.email === dto.email) {
           throw new ConflictException('Email already exists');
         }
         throw new ConflictException('Employee code already exists');
@@ -102,12 +102,16 @@ export class EmployeesService {
     }
 
     if (dto.password) {
-      dto['password_hash'] = await bcrypt.hash(dto.password, 10);
-      delete dto.password;
+      employee.password_hash = await bcrypt.hash(dto.password, 10);
     }
 
-    await this.employeeRepo.update(id, dto);
-    return this.findOne(id);
+    if (dto.name !== undefined) employee.name = dto.name;
+    if (dto.email !== undefined) employee.email = dto.email;
+    if (dto.employee_code !== undefined)
+      employee.employee_code = dto.employee_code;
+    if (dto.role !== undefined) employee.role = dto.role;
+
+    return this.employeeRepo.save(employee);
   }
 
   async deactivate(id: number) {

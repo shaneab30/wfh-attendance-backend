@@ -79,4 +79,9 @@ export class AttendanceController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.attendanceService.findOne(id);
   }
+
+  @Patch('checkout')
+  checkoutCurrent(@CurrentUser() user: Employee) {
+    return this.attendanceService.checkoutByEmployee(user.id);
+  }
 }

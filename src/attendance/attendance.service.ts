@@ -112,4 +112,28 @@ export class AttendanceService {
 
     return attendance;
   }
+
+  async checkoutByEmployee(employeeId: number) {
+    const today = new Date().toISOString().split('T')[0];
+
+    const attendance = await this.attendanceRepo
+      .createQueryBuilder('attendance')
+      .where('attendance.employee_id = :employeeId', { employeeId })
+      .andWhere('DATE(attendance.attendance_date) = DATE(:today)', { today })
+      .getOne();
+
+    if (!attendance) {
+      throw new NotFoundException('No check-in found for today');
+    }
+
+    if (attendance.check_out_time) {
+      throw new BadRequestException('Already checked out today');
+    }
+
+    const now = new Date();
+    const timeString = now.toTimeString().slice(0, 8);
+    attendance.check_out_time = timeString;
+
+    return this.attendanceRepo.save(attendance);
+  }
 }
