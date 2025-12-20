@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { Attendance } from './attendance.entity';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
+import { Attendance, AttendanceStatus } from './attendance.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateAttendanceDto } from './dto/create-attendance.dto';
-import { UpdateCheckoutDto } from './dto/update-checkout.dto';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class AttendanceService {
@@ -13,65 +14,43 @@ export class AttendanceService {
     private readonly attendanceRepo: Repository<Attendance>,
   ) {}
 
-  async create(dto: CreateAttendanceDto) {
-    const exist = await this.attendanceRepo.exists({
-      where: {
-        employee_id: dto.employee_id,
-        attendance_date: new Date(dto.attendance_date),
-      },
-    });
+  async checkIn({
+    employeeId,
+    photoPath,
+  }: {
+    employeeId: number;
+    photoPath: string;
+  }) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    if (exist) {
-      throw new BadRequestException(
-        'Attendance for this employee on the given date already exists.',
-        { cause: { attendance_date: dto.attendance_date } },
-      );
+    const now = new Date();
+    const timeString = now.toTimeString().slice(0, 8);
+
+    const existing = await this.attendanceRepo
+      .createQueryBuilder('attendance')
+      .where('attendance.employee_id = :employeeId', { employeeId })
+      .andWhere('DATE(attendance.attendance_date) = DATE(:today)', {
+        today: today.toISOString().split('T')[0],
+      })
+      .getOne();
+
+    if (existing) {
+      throw new BadRequestException('Already checked in today');
     }
+
     const attendance = this.attendanceRepo.create({
-      employee_id: dto.employee_id,
-      attendance_date: dto.attendance_date,
-      check_in_time: dto.check_in_time,
-      check_out_time: dto.check_out_time,
-      photo_path: dto.photo_path,
-      status: dto.status,
+      employee_id: employeeId,
+      attendance_date: today,
+      check_in_time: timeString,
+      status: AttendanceStatus.ON_TIME,
+      photo_path: photoPath,
     });
 
     return this.attendanceRepo.save(attendance);
   }
 
-  async findAll() {
-    return this.attendanceRepo.find({
-      select: [
-        'id',
-        'employee_id',
-        'attendance_date',
-        'check_in_time',
-        'check_out_time',
-        'photo_path',
-        'status',
-      ],
-    });
-  }
-
-  async update(id: number, dto: Partial<CreateAttendanceDto>) {
-    const checkAttendance = await this.attendanceRepo.findOne({
-      where: { id },
-    });
-
-    if (!checkAttendance) {
-      throw new NotFoundException('Attendance record not found.');
-    }
-
-    await this.attendanceRepo.update(id, dto);
-    return this.attendanceRepo.findOne({ where: { id } });
-  }
-
-  private timeToMinutes(time: string): number {
-    const [hours, minutes] = time.split(':').map(Number);
-    return hours * 60 + minutes;
-  }
-
-  async updateCheckout(id: number, dto: UpdateCheckoutDto) {
+  async updateCheckout(id: number) {
     const attendance = await this.attendanceRepo.findOne({
       where: { id },
     });
@@ -81,34 +60,19 @@ export class AttendanceService {
     }
 
     if (attendance.check_out_time) {
-      throw new BadRequestException('Employee has already checked out');
+      throw new BadRequestException('Already checked out');
     }
 
-    const checkInMinutes = this.timeToMinutes(attendance.check_in_time);
-    const checkOutMinutes = this.timeToMinutes(dto.check_out_time);
-
-    if (checkOutMinutes < checkInMinutes) {
-      throw new BadRequestException(
-        'Check-out time cannot be earlier than check-in time',
-      );
-    }
-
-    attendance.check_out_time = dto.check_out_time;
+    const now = new Date();
+    const timeString = now.toTimeString().slice(0, 8);
+    attendance.check_out_time = timeString;
 
     return this.attendanceRepo.save(attendance);
   }
 
-  async findOne(id: number) {
-    const checkAttendance = await this.attendanceRepo.findOne({
-      where: { id },
-    });
-
-    if (!checkAttendance) {
-      throw new NotFoundException('Attendance record not found.');
-    }
-
-    return this.attendanceRepo.findOne({
-      where: { id },
+  async findAll() {
+    return this.attendanceRepo.find({
+      order: { attendance_date: 'DESC' },
       select: [
         'id',
         'employee_id',
@@ -119,5 +83,33 @@ export class AttendanceService {
         'status',
       ],
     });
+  }
+
+  async findByEmployeeId(employee_id: number) {
+    return this.attendanceRepo.find({
+      where: { employee_id },
+      order: { attendance_date: 'DESC' },
+      select: [
+        'id',
+        'employee_id',
+        'attendance_date',
+        'check_in_time',
+        'check_out_time',
+        'photo_path',
+        'status',
+      ],
+    });
+  }
+
+  async findOne(id: number) {
+    const attendance = await this.attendanceRepo.findOne({
+      where: { id },
+    });
+
+    if (!attendance) {
+      throw new NotFoundException('Attendance record not found');
+    }
+
+    return attendance;
   }
 }

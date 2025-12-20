@@ -48,7 +48,18 @@ export class EmployeesController {
   }
 
   @Patch(':id/deactivate')
+  @UseGuards(RolesGuard)
+  @Roles(EmployeeRole.ADMIN)
+  @Roles(EmployeeRole.HRD)
   deactivate(@Param('id') id: number) {
     return this.employeesService.deactivate(+id);
+  }
+
+  @Patch(':id/activate')
+  @UseGuards(RolesGuard)
+  @Roles(EmployeeRole.ADMIN)
+  @Roles(EmployeeRole.HRD)
+  activate(@Param('id') id: number) {
+    return this.employeesService.activate(+id);
   }
 }

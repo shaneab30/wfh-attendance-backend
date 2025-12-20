@@ -115,4 +115,10 @@ export class EmployeesService {
     employee.is_active = false;
     return this.employeeRepo.save(employee);
   }
+
+  async activate(id: number) {
+    const employee = await this.findOne(id);
+    employee.is_active = true;
+    return this.employeeRepo.save(employee);
+  }
 }
