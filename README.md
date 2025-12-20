@@ -108,3 +108,9 @@ DB_NAME= your db name
 JWT_SECRET= your secret key
 PORT= your port
 ```
+
+## Seed Insert Users
+
+```bash
+npx ts-node seed-admin.ts
+```
