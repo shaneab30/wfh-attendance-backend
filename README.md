@@ -114,3 +114,50 @@ PORT= your port
 ```bash
 npx ts-node seed-admin.ts
 ```
+
+## Database Creation
+```bash
+CREATE TYPE employee_role AS ENUM ('EMPLOYEE', 'HRD', 'ADMIN');
+CREATE TYPE attendance_status AS ENUM ('ON_TIME', 'LATE', 'ABSENT');
+
+
+
+CREATE TABLE employees (
+    id BIGSERIAL PRIMARY KEY,
+    employee_code VARCHAR(20) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role employee_role DEFAULT 'EMPLOYEE',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+select * from employees;
+
+CREATE TABLE attendance (
+    id BIGSERIAL PRIMARY KEY,
+    employee_id BIGINT NOT NULL,
+    attendance_date DATE NOT NULL,
+    check_in_time TIME,
+    check_out_time TIME,
+    photo_path VARCHAR(255),
+    status attendance_status DEFAULT 'ON_TIME',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+
+);
+
+
+select * from attendance;
+
+ALTER TABLE "attendance"
+ADD CONSTRAINT fk_attendance_employee
+FOREIGN KEY (employee_id)
+REFERENCES "employees"(id)
+ON DELETE CASCADE;
+
+ALTER TABLE attendance
+ADD CONSTRAINT uq_employee_attendance_date
+UNIQUE (employee_id, attendance_date);
+```
